@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>炫彩烟花展示</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: black;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+let cw, ch;
+function resizeCanvas() {
+  cw = canvas.width = window.innerWidth;
+  ch = canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
+
+class Particle {
+  constructor(x, y, color, size, speed, angle) {
+    this.x = x;
+    this.y = y;
+    this.size = size;
+    this.speed = speed;
+    this.angle = angle;
+    this.vx = Math.cos(angle) * speed;
+    this.vy = Math.sin(angle) * speed;
+    this.gravity = 0.05;
+    this.alpha = 1;
+    this.fade = Math.random() * 0.01 + 0.008;
+    this.color = color;
+  }
+
+  update() {
+    this.vx *= 0.98;
+    this.vy *= 0.98;
+    this.vy += this.gravity;
+    this.x += this.vx;
+    this.y += this.vy;
+    this.alpha -= this.fade;
+  }
+
+  draw() {
+    ctx.save();
+    ctx.globalAlpha = this.alpha;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fillStyle = this.color;
+    ctx.shadowColor = this.color;
+    ctx.shadowBlur = 10;
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+let particles = [];
+
+function createExplosion(x, y) {
+  const colors = ['#ff0000', '#ffff00', '#00ccff', '#ff66cc', '#ffffff', '#ff6600', '#cc99ff'];
+  for (let i = 0; i < 100; i++) {
+    // 多彩搭配，每个粒子颜色不同
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const size = Math.random() * 2 + 1.5;
+    const speed = Math.random() * 5 + 2;
+    const angle = Math.random() * Math.PI * 2;
+    particles.push(new Particle(x, y, color, size, speed, angle));
+  }
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  // 黑底透明覆盖 → 留残影
+  ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+  ctx.fillRect(0, 0, cw, ch);
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    let p = particles[i];
+    p.update();
+    if (p.alpha <= 0) {
+      particles.splice(i, 1);
+    } else {
+      p.draw();
+    }
+  }
+}
+
+// 事件监听：鼠标点击 + 手机触摸 + 滑动都支持
+canvas.addEventListener("click", e => {
+  createExplosion(e.clientX, e.clientY);
+});
+canvas.addEventListener("touchstart", e => {
+  for (let touch of e.touches) {
+    createExplosion(touch.clientX, touch.clientY);
+  }
+});
+canvas.addEventListener("touchmove", e => {
+  for (let touch of e.touches) {
+    createExplosion(touch.clientX, touch.clientY);
+  }
+});
+
+animate();
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>炫彩烟花</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: black;
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+    }
+    .hint {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      font-size: 14px;
+      opacity: 0.7;
+      text-align: center;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div class="hint">点击或触摸屏幕任意位置放烟花</div>
+
+// ... existing code ...
+
+// 修改事件监听部分
+canvas.addEventListener("touchstart", e => {
+  e.preventDefault(); // 防止移动端双击缩放
+  for (let touch of e.touches) {
+    const rect = canvas.getBoundingClientRect();
+    createExplosion(
+      touch.clientX - rect.left,
+      touch.clientY - rect.top
+    );
+  }
+}, { passive: false });
+
+canvas.addEventListener("touchmove", e => {
+  e.preventDefault();
+  for (let touch of e.touches) {
+    const rect = canvas.getBoundingClientRect();
+    createExplosion(
+      touch.clientX - rect.left,
+      touch.clientY - rect.top
+    );
+  }
+}, { passive: false });
+
+// 添加自动播放效果
+function autoPlay() {
+  if (particles.length < 100) { // 限制粒子数量，避免性能问题
+    const x = Math.random() * cw;
+    const y = Math.random() * (ch * 0.7); // 在屏幕上方40%的区域产生烟花
+    createExplosion(x, y);
+  }
+}
+
+
+// ... existing code ...
+</script>
+</body>
+</html>
+// ... existing code ...
+
+class Particle {
+  constructor(x, y, color, size, speed, angle, type = 'normal') {
+    this.x = x;
+    this.y = y;
+    this.size = size;
+    this.speed = speed;
+    this.angle = angle;
+    this.vx = Math.cos(angle) * speed;
+    this.vy = Math.sin(angle) * speed;
+    this.gravity = 0.05;
+    this.alpha = 1;
+    this.fade = Math.random() * 0.01 + 0.008;
+    this.color = color;
+    this.type = type;
+    // 添加闪烁效果
+    this.sparkle = Math.random() > 0.5;
+    this.sparkleSpeed = Math.random() * 0.02 + 0.01;
+    // 尾迹效果
+    this.trail = [];
+    this.maxTrailLength = 5;
+  }
+
+  update() {
+    // 保存前一个位置用于尾迹
+    this.trail.push({x: this.x, y: this.y, alpha: this.alpha});
+    if (this.trail.length > this.maxTrailLength) {
+      this.trail.shift();
+    }
+
+    this.vx *= 0.98;
+    this.vy *= 0.98;
+    
+    // 不同类型的粒子有不同的运动特征
+    if (this.type === 'normal') {
+      this.vy += this.gravity;
+    } else if (this.type === 'floating') {
+      this.vx += (Math.random() - 0.5) * 0.2;
+      this.vy += (Math.random() - 0.5) * 0.2;
+    } else if (this.type === 'spiral') {
+      const spiralSpeed = 0.2;
+      this.vx += Math.cos(this.angle) * spiralSpeed;
+      this.vy += Math.sin(this.angle) * spiralSpeed;
+      this.angle += 0.1;
+    }
+
+    this.x += this.vx;
+    this.y += this.vy;
+    this.alpha -= this.fade;
+
+    if (this.sparkle) {
+      this.alpha += Math.sin(Date.now() * this.sparkleSpeed) * 0.1;
+    }
+  }
+
+  draw() {
+    // 绘制尾迹
+    this.trail.forEach((pos, index) => {
+      const trailAlpha = (index / this.trail.length) * pos.alpha * 0.5;
+      ctx.save();
+      ctx.globalAlpha = trailAlpha;
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, this.size * 0.8, 0, Math.PI * 2);
+      ctx.fillStyle = this.color;
+      ctx.fill();
+      ctx.restore();
+    });
+
+    // 绘制主粒子
+    ctx.save();
+    ctx.globalAlpha = this.alpha;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fillStyle = this.color;
+    ctx.shadowColor = this.color;
+    ctx.shadowBlur = 15;
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function createExplosion(x, y) {
+  const colors = [
+    '#ff0000', '#ffff00', '#00ccff', '#ff66cc', '#ffffff', 
+    '#ff6600', '#cc99ff', '#88ff00', '#ff00ff', '#00ffff',
+    '#ffd700', '#ff1493', '#7fffd4', '#ff69b4', '#00ff7f'
+  ];
+
+  // 主爆炸
+  const particleCount = Math.random() * 100 + 150; // 增加基础粒子数量
+  for (let i = 0; i < particleCount; i++) {
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const size = Math.random() * 3 + 1;
+    const speed = Math.random() * 8 + 3;
+    const angle = Math.random() * Math.PI * 2;
+    particles.push(new Particle(x, y, color, size, speed, angle, 'normal'));
+  }
+
+  // 添加漂浮粒子
+  for (let i = 0; i < 50; i++) {
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const size = Math.random() * 2 + 0.5;
+    const speed = Math.random() * 3 + 1;
+    const angle = Math.random() * Math.PI * 2;
+    particles.push(new Particle(x, y, color, size, speed, angle, 'floating'));
+  }
+
+  // 添加螺旋粒子
+  for (let i = 0; i < 30; i++) {
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const size = Math.random() * 2 + 0.5;
+    const speed = Math.random() * 2 + 1;
+    const angle = (i / 30) * Math.PI * 2;
+    particles.push(new Particle(x, y, color, size, speed, angle, 'spiral'));
+  }
+
+  // 添加第二次小爆炸
+  setTimeout(() => {
+    const subExplosions = Math.floor(Math.random() * 3) + 2;
+    for (let i = 0; i < subExplosions; i++) {
+      const distance = Math.random() * 50 + 30;
+      const angle = Math.random() * Math.PI * 2;
+      const subX = x + Math.cos(angle) * distance;
+      const subY = y + Math.sin(angle) * distance;
+      
+      for (let j = 0; j < 30; j++) {
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        const size = Math.random() * 2 + 0.5;
+        const speed = Math.random() * 4 + 2;
+        const subAngle = Math.random() * Math.PI * 2;
+        particles.push(new Particle(subX, subY, color, size, speed, subAngle, 'normal'));
+      }
+    }
+  }, 100);
+}
+
+// ... existing code ...
+
+function animate() {
+  requestAnimationFrame(animate);
+  ctx.fillStyle = "rgba(0, 0, 0, 0.1)"; // 减小透明度，增加尾迹效果
+  ctx.fillRect(0, 0, cw, ch);
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    let p = particles[i];
+    p.update();
+    if (p.alpha <= 0) {
+      particles.splice(i, 1);
+    } else {
+      p.draw();
+    }
+  }
+}
+
+// ... existing code ...
+// ... existing code ...
+
+class Particle {
+  constructor(x, y, color, size, speed, angle, type = 'normal') {
+    this.x = x;
+    this.y = y;
+    this.size = size;
+    this.speed = speed;
+    this.angle = angle;
+    this.vx = Math.cos(angle) * speed;
+    this.vy = Math.sin(angle) * speed;
+    this.gravity = 0.15; // 增加重力效果
+    this.alpha = 1;
+    this.fade = Math.random() * 0.02 + 0.015; // 加快消失速度
+    this.color = color;
+    this.type = type;
+    this.trail = [];
+    this.maxTrailLength = 3;
+    this.decay = 0.98; // 速度衰减
+  }
+
+  update() {
+    this.trail.push({x: this.x, y: this.y, alpha: this.alpha});
+    if (this.trail.length > this.maxTrailLength) {
+      this.trail.shift();
+    }
+
+    // 更真实的物理效果
+    this.vx *= this.decay;
+    this.vy *= this.decay;
+    this.vy += this.gravity;
+    
+    this.x += this.vx;
+    this.y += this.vy;
+    this.alpha -= this.fade;
+
+    // 粒子变小效果
+    if (this.size > 0.1) {
+      this.size *= 0.99;
+    }
+  }
+
+  draw() {
+    // 绘制发光效果
+    ctx.save();
+    ctx.globalAlpha = this.alpha;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fillStyle = this.color;
+    ctx.shadowColor = this.color;
+    ctx.shadowBlur = 20;
+    ctx.fill();
+    
+    // 绘制外圈光晕
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size * 1.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, ' + (this.alpha * 0.3) + ')';
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function createExplosion(x, y) {
+  const colors = [
+    '#ff4444', '#ffff00', '#88ff00', '#00ffff', '#ff66cc',
+    '#ff8844', '#ffffff', '#ff1493', '#ffd700', '#00ff7f'
+  ];
+
+  // 创建多个同时爆炸的中心点
+  const centers = [
+    { x, y },
+    { x: x + Math.random() * 60 - 30, y: y + Math.random() * 60 - 30 },
+    { x: x + Math.random() * 60 - 30, y: y + Math.random() * 60 - 30 },
+    { x: x + Math.random() * 60 - 30, y: y + Math.random() * 60 - 30 },
+    { x: x + Math.random() * 60 - 30, y: y + Math.random() * 60 - 30 }
+  ];
+
+  centers.forEach(center => {
+    const mainColor = colors[Math.floor(Math.random() * colors.length)];
+    
+    // 主爆炸效果
+    const particleCount = Math.random() * 100 + 200;
+    for (let i = 0; i < particleCount; i++) {
+      const angle = (i / particleCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
+      const speed = Math.random() * 7 + 5;
+      const size = Math.random() * 2 + 1;
+      particles.push(new Particle(center.x, center.y, mainColor, size, speed, angle, 'normal'));
+    }
+
+    // 创建爆炸中心的亮点
+    for (let i = 0; i < 20; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 3 + 1;
+      particles.push(new Particle(
+        center.x,
+        center.y,
+        '#ffffff',
+        Math.random() * 3 + 2,
+        speed,
+        angle,
+        'center'
+      ));
+    }
+
+    // 创建散射效果
+    for (let i = 0; i < 30; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 10 + 8;
+      particles.push(new Particle(
+        center.x,
+        center.y,
+        mainColor,
+        Math.random() * 1.5 + 0.5,
+        speed,
+        angle,
+        'scatter'
+      ));
+    }
+  });
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  // 减小透明度，增加烟雾效果
+  ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
+  ctx.fillRect(0, 0, cw, ch);
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    let p = particles[i];
+    p.update();
+    if (p.alpha <= 0) {
+      particles.splice(i, 1);
+    } else {
+      p.draw();
+    }
+  }
+}
+
+// ... existing code ...
+// ... existing code ...
+
+function createExplosion(x, y) {
+  const colors = [
+    '#ff4444', '#ffff00', '#88ff00', '#00ffff', '#ff66cc',
+    '#ff8844', '#ffffff', '#ff1493', '#ffd700', '#00ff7f'
+  ];
+
+  // 在同一位置叠加5次爆炸
+  for (let burst = 0; burst < 5; burst++) {
+    const mainColor = colors[Math.floor(Math.random() * colors.length)];
+    
+    // 主爆炸效果 - 每次爆炸的粒子数增加
+    const particleCount = Math.random() * 200 + 300; // 增加基础粒子数
+    for (let i = 0; i < particleCount; i++) {
+      const angle = (i / particleCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
+      const speed = Math.random() * 12 + (burst * 2); // 不同层次的速度
+      const size = Math.random() * 2.5 + 1;
+      particles.push(new Particle(x, y, mainColor, size, speed, angle, 'normal'));
+    }
+
+    // 创建爆炸中心的亮点
+    for (let i = 0; i < 30; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 5 + (burst * 1.5);
+      particles.push(new Particle(
+        x,
+        y,
+        '#ffffff',
+        Math.random() * 3 + 2,
+        speed,
+        angle,
+        'center'
+      ));
+    }
+
+    // 创建散射效果
+    for (let i = 0; i < 50; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 15 + (burst * 2) + 8;
+      particles.push(new Particle(
+        x,
+        y,
+        mainColor,
+        Math.random() * 1.5 + 0.5,
+        speed,
+        angle,
+        'scatter'
+      ));
+    }
+  }
+}
+
+class Particle {
+  constructor(x, y, color, size, speed, angle, type = 'normal') {
+    this.x = x;
+    this.y = y;
+    this.size = size;
+    this.speed = speed;
+    this.angle = angle;
+    this.vx = Math.cos(angle) * speed;
+    this.vy = Math.sin(angle) * speed;
+    this.gravity = 0.15;
+    this.alpha = 1;
+    this.fade = Math.random() * 0.02 + 0.015;
+    this.color = color;
+    this.type = type;
+    this.trail = [];
+    this.maxTrailLength = 3;
+    this.decay = 0.97; // 稍微降低衰减速度，让粒子飞得更远
+  }
+
+  update() {
+    this.trail.push({x: this.x, y: this.y, alpha: this.alpha});
+    if (this.trail.length > this.maxTrailLength) {
+      this.trail.shift();
+    }
+
+    this.vx *= this.decay;
+    this.vy *= this.decay;
+    this.vy += this.gravity;
+    
+    this.x += this.vx;
+    this.y += this.vy;
+    this.alpha -= this.fade;
+
+    // 粒子变小效果
+    if (this.size > 0.1) {
+      this.size *= 0.99;
+    }
+  }
+
+  draw() {
+    ctx.save();
+    ctx.globalAlpha = this.alpha;
+    
+    // 绘制尾迹
+    this.trail.forEach((pos, index) => {
+      const trailAlpha = (index / this.trail.length) * pos.alpha * 0.3;
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, this.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${this.getColorValues(this.color)}, ${trailAlpha})`;
+      ctx.fill();
+    });
+
+    // 绘制主粒子
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fillStyle = this.color;
+    ctx.shadowColor = this.color;
+    ctx.shadowBlur = 20;
+    ctx.fill();
+    
+    // 绘制外圈光晕
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size * 1.5, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha * 0.3})`;
+    ctx.fill();
+    
+    ctx.restore();
+  }
+
+  // 辅助函数：将颜色转换为RGB值
+  getColorValues(color) {
+    const temp = document.createElement('div');
+    temp.style.color = color;
+    document.body.appendChild(temp);
+    const styles = window.getComputedStyle(temp);
+    const rgb = styles.color;
+    document.body.removeChild(temp);
+    return rgb.match(/\d+/g).join(', ');
+  }
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+  ctx.fillRect(0, 0, cw, ch);
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    let p = particles[i];
+    p.update();
+    if (p.alpha <= 0) {
+      particles.splice(i, 1);
+    } else {
+      p.draw();
+    }
+  }
+}
+
+// ... existing code ...
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>炫彩烟花</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: black;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        canvas {
+            display: block;
+            touch-action: none;
+        }
+        .hint {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 14px;
+            opacity: 0.7;
+            text-align: center;
+            pointer-events: none;
+            white-space: nowrap;
+            text-shadow: 0 0 4px rgba(0,0,0,0.5);
+        }
+        @media (orientation: portrait) {
+            .hint {
+                bottom: 10%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="hint">点击或触摸屏幕任意位置放烟花</div>
+
+    <!-- 原有的 script 代码 -->
+    <script>
+    // ... 你现有的 JavaScript 代码 ...
+
+    // 添加以下移动端优化代码
+    document.addEventListener('touchmove', function(e) {
+        e.preventDefault();
+    }, { passive: false });
+
+    // 禁用双击缩放
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function(e) {
+        const now = Date.now();
+        if (now - lastTouchEnd < 300) {
+            e.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, false);
+
+    // 添加自动播放功能
+    let autoPlayTimer = null;
+    function startAutoPlay() {
+        if (!autoPlayTimer) {
+            autoPlayTimer = setInterval(() => {
+                const x = Math.random() * cw;
+                const y = Math.random() * (ch * 0.6);
+                createExplosion(x, y);
+            }, 2000);
+        }
+    }
+
+    function stopAutoPlay() {
+        if (autoPlayTimer) {
+            clearInterval(autoPlayTimer);
+            autoPlayTimer = null;
+        }
+    }
+
+    // 30秒无操作后自动播放
+    let idleTimer = null;
+    function resetIdleTimer() {
+        stopAutoPlay();
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(startAutoPlay, 30000);
+    }
+
+    // 添加事件监听
+    ['touchstart', 'mousedown', 'mousemove'].forEach(eventName => {
+        document.addEventListener(eventName, resetIdleTimer, false);
+    });
+
+    // 初始化
+    resetIdleTimer();
+    </script>
+</body>
+</html>
